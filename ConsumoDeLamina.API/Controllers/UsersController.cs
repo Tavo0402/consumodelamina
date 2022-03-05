@@ -52,5 +52,28 @@ namespace ConsumoDeLamina.API.Controllers
             _response.Result = respuesta;
             return Ok(_response);
         }
+
+        [HttpPost("Login")]
+        public async Task<ActionResult> Login(UserDTO user)
+        {
+            var respuesta = await _userRepository.Login(user.Email, user.Password);
+
+            if (respuesta == "nouser")
+            {
+                _response.IsSuccess = false;
+                _response.DisplayMessage = "Usuario no existe";
+                return BadRequest(_response);
+            }
+            if (respuesta == "wrongpassword")
+            {
+                _response.IsSuccess = false;
+                _response.DisplayMessage = "Contraseña in correcta";
+                return BadRequest(_response);
+            }
+
+            _response.Result = respuesta;
+            _response.DisplayMessage = "Usuario conectado";
+            return Ok(_response);
+        }
     }
 }

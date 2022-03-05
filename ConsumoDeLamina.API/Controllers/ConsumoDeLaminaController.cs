@@ -9,11 +9,13 @@ using ConsumoDeLamina.Data;
 using ConsumoDeLamina.Entities.Models;
 using ConsumoDeLamina.API.Repositories.IRepository;
 using ConsumoDeLamina.Entities.DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ConsumoDeLamina.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class ConsumoDeLaminaController : ControllerBase
     {
         private readonly IConsumoDeLaminaRepository _consumoDeLaminaRepository;

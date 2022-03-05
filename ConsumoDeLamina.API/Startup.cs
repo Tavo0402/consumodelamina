@@ -3,6 +3,7 @@ using ConsumoDeLamina.API.Mapper;
 using ConsumoDeLamina.API.Repositories;
 using ConsumoDeLamina.API.Repositories.IRepository;
 using ConsumoDeLamina.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -12,7 +13,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.Filters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,6 +49,32 @@ namespace ConsumoDeLamina.API
             services.AddScoped<IConsumoDeLaminaRepository, ConsumoDeLaminaRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
 
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                    .AddJwtBearer(options =>
+                    {
+                        options.TokenValidationParameters = new TokenValidationParameters
+                        {
+                            ValidateIssuerSigningKey = true,
+                            IssuerSigningKey = new SymmetricSecurityKey(
+                                System.Text.Encoding.ASCII.GetBytes(
+                                    _configuration.GetSection("AppSettings:Token").Value)),
+                            ValidateIssuer = false,
+                            ValidateAudience = false
+                        };
+                    });
+
+            services.AddSwaggerGen(c => {
+                c.OperationFilter<SecurityRequirementsOperationFilter>();
+                c.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme { 
+                    Description = "Autorizacion standar, usar Bearer. Ejemplo \"bearer {token}\"",
+                    In = ParameterLocation.Header,
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer"
+                });
+            });
+
+            services.AddCors();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "ConsumoDeLamina.API", Version = "v1" });
@@ -66,7 +95,13 @@ namespace ConsumoDeLamina.API
 
             app.UseRouting();
 
+            app.UseAuthentication();
+
             app.UseAuthorization();
+
+            app.UseCors(x => x.AllowAnyOrigin()
+                                .AllowAnyMethod()
+                                .AllowAnyHeader());
 
             app.UseEndpoints(endpoints =>
             {
